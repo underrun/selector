@@ -1,5 +1,7 @@
 """selector - WSGI handler delegation. (AKA routing.)"""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import re
 
 from itertools import starmap
@@ -21,16 +23,16 @@ def method_not_allowed(environ, start_response):
     start_response("405 Method Not Allowed",
                    [('Allow', ', '.join(environ['selector.methods'])),
                     ('Content-Type', 'text/plain')])
-    return ["405 Method Not Allowed\n\n"
-            "The method specified in the Request-Line is not allowed "
-            "for the resource identified by the Request-URI."]
+    return [b"405 Method Not Allowed\n\n"
+            b"The method specified in the Request-Line is not allowed "
+            b"for the resource identified by the Request-URI."]
 
 
 def not_found(environ, start_response):
     """Default WSGI 404 app."""
     start_response("404 Not Found", [('Content-Type', 'text/plain')])
-    return ["404 Not Found\n\n"
-            "The server has not found anything matching the Request-URI."]
+    return [b"404 Not Found\n\n"
+            b"The server has not found anything matching the Request-URI."]
 
 
 class Selector(object):
@@ -115,7 +117,7 @@ class Selector(object):
         app, svars, methods, matched = \
             self.select(environ['PATH_INFO'], environ['REQUEST_METHOD'])
         unnamed, named = [], {}
-        for k, v in svars.iteritems():
+        for k, v in svars.items():
             if k.startswith('__pos'):
                 k = k[5:]
             named[k] = v
@@ -143,7 +145,7 @@ class Selector(object):
         for regex, method_dict in self.mappings:
             match = regex.search(path)
             if match:
-                methods = method_dict.keys()
+                methods = [k for k in method_dict]
                 if method in method_dict:
                     return (method_dict[method],
                             match.groupdict(),
@@ -179,7 +181,7 @@ class Selector(object):
                         path, methods = self._parse_line(line, path, methods)
                     if path and methods:
                         self.add(path, methods)
-                except MappingFileError, mfe:
+                except MappingFileError as mfe:
                     raise MappingFileError("line %s: %s" % (lineno, mfe))
             finally:
                 self.wrap = oldwrap
@@ -312,14 +314,14 @@ class SimpleParser(object):
         """Turn a path expression into regex."""
         if self.ostart in text:
             parts = self._outermost_optionals_split(text)
-            parts = map(self._parse, parts)
+            parts = list(map(self._parse, parts))
             parts[1::2] = ["(%s)?" % p for p in parts[1::2]]
         else:
             parts = [part.split(self.end)
                      for part in text.split(self.start)]
             parts = [y for x in parts for y in x]
-            parts[::2] = map(re.escape, parts[::2])
-            parts[1::2] = map(self._lookup, parts[1::2])
+            parts[::2] = list(map(re.escape, parts[::2]))
+            parts[1::2] = list(map(self._lookup, parts[1::2]))
         return ''.join(parts)
 
     def __call__(self, url_pattern):
@@ -341,7 +343,7 @@ class EnvironDispatcher(object):
     def __call__(self, environ, start_response):
         """Call the first app whose predicate is true.
 
-        Each predicate is passes the environ to evaluate.
+        Each predicate is passed the environ to evaluate.
         """
         for predicate, app in self.rules:
             if predicate(environ):
@@ -442,7 +444,7 @@ def pliant(func):
         args = list(args)
         args.insert(0, start_response)
         args.insert(0, environ)
-        return apply(func, args, dict(kwargs))
+        return func(*args, **dict(kwargs))
     return wsgi_func
 
 
@@ -462,5 +464,5 @@ def opliant(meth):
         args.insert(0, start_response)
         args.insert(0, environ)
         args.insert(0, self)
-        return apply(meth, args, dict(kwargs))
+        return meth(*args, **dict(kwargs))
     return wsgi_meth
