@@ -431,7 +431,7 @@ class ByMethod(object):
 
 
 def pliant(func):
-    """Decorate an unbound wsgi callable taking args from wsgiorg.routing_args.
+    """Decorate a wsgi callable taking args from wsgiorg.routing_args.
 
     .. code-block:: python
 
@@ -439,12 +439,18 @@ def pliant(func):
         def app(environ, start_response, arg1, arg2, foo='bar'):
             ...
     """
-    def wsgi_func(environ, start_response):
-        args, kwargs = environ.get('wsgiorg.routing_args', ([], {}))
+    def wsgi_func(*args):
         args = list(args)
-        args.insert(0, start_response)
-        args.insert(0, environ)
+        if len(args) < 3:
+            environ, start_response = args
+
+        else:
+            environ, start_response = args[1:]
+
+        wsgi_args, kwargs = environ.get('wsgiorg.routing_args', ([], {}))
+        args.extend(wsgi_args)
         return func(*args, **dict(kwargs))
+
     return wsgi_func
 
 
