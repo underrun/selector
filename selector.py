@@ -20,9 +20,9 @@ class PathExpressionParserError(Exception):
 
 def method_not_allowed(environ, start_response):
     """Default WSGI 405 app."""
-    start_response("405 Method Not Allowed",
-                   [('Allow', ', '.join(environ['selector.methods'])),
-                    ('Content-Type', 'text/plain')])
+    start_response(str("405 Method Not Allowed"),
+                   [(str('Allow'), str(', '.join(environ['selector.methods']))),
+                    (str('Content-Type'), str('text/plain'))])
     return [b"405 Method Not Allowed\n\n"
             b"The method specified in the Request-Line is not allowed "
             b"for the resource identified by the Request-URI."]
@@ -30,7 +30,7 @@ def method_not_allowed(environ, start_response):
 
 def not_found(environ, start_response):
     """Default WSGI 404 app."""
-    start_response("404 Not Found", [('Content-Type', 'text/plain')])
+    start_response(str("404 Not Found"), [(str('Content-Type'), str('text/plain'))])
     return [b"404 Not Found\n\n"
             b"The server has not found anything matching the Request-URI."]
 
